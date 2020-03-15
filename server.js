@@ -19,23 +19,26 @@ let notes = [{
   "text":"Test text"
 }];
 
-//read notes from file, returns notes as obj
-function getNotes(){
-  fs.readFile(path.join(__dirname, "db", "db.json"), "utf8", function(err, data) {
-    if (err) throw err;
-    return JSON.parse(data);
+function getNotes(path, encoding) {
+  return new Promise(function(resolve, reject) {
+    fs.readFile(path, encoding, function(err, data) {
+      if (err) {
+        return reject(err);
+      }
+      console.log("line 28");
+      resolve(JSON.parse(data));
+    });
   });
 }
 
-//save notes to file
-function setNotes(allNotes){
-  fs.writeFile(path.join(__dirname, "db", "db.json"), allNotes, function(err){
-    if (err) {
-        throw err;
-    } 
-    else {
-        console.log("notes saved");
-    }
+function setNotes(path, content, encoding) {
+  return new Promise(function(resolve, reject) {
+    fs.writeFile(path, content, encoding, function(err) {
+      if (err) {
+        return reject(err);
+      }
+      console.log(`line 40`);
+    });
   });
 }
 
@@ -48,52 +51,79 @@ app.get("/notes", function(req, res) {
 
 // current notes on file
 app.get("/api/notes", function(req, res) {
-  fs.readFile(path.join(__dirname, "db", "db.json"), "utf8", function(err, data) {
-    if (err) throw err;
-    return res.json(JSON.parse(data));
+  getNotes(path.join(__dirname, "db", "db.json"), "utf8")
+  .then(function(allNotes) {
+    return res.json(allNotes);
+  })
+  .catch(function(err) {
+    console.log(err);
   });
 });
 
-// Displays a single ch, or returns false
+// Displays a single note, or returns false
 app.get("/api/notes/:id", function(req, res) {
   const chosen = req.params.id;
-  
   console.log(chosen);
   
-  for (const i = 0; i < characters.length; i++) {
-    if (chosen === characters[i].routeName) {
-      return res.json(characters[i]);
-    }
-  }
-  
+  //get the notes, give back the one at the chosen index
+  getNotes(path.join(__dirname, "db", "db.json"), "utf8")
+  .then(function(allNotes) {
+    const thisNote = allNotes[chosen];
+    console.log(`thisNote: ${thisNote}`)
+    return res.json(thisNote);
+  })
+  .catch(function(err) {
+    console.log(err);
+  });
   return res.json(false);
-});
-
-//add new note
-app.post("/api/notes", function(req, res) {
-  const newNote = req.body;
-  let allNotes;
-  console.log(newNote);
-  
-  fs.readFile(path.join(__dirname, "db", "db.json"), "utf8", function(err, data) {
-    if (err) throw err;
-    allNotes = JSON.parse(data);
-  });
-  console.log(`allNotes: ${allNotes}`);
-  allNotes.push(newNote);
-
-  fs.writeFile(path.join(__dirname, "db", "db.json"), JSON.stringify(allNotes), function(err){
-    if (err) throw err;
-    else {
-        console.log("notes saved");
-    }
-  });
-
 });
 
 // default (index) page
 app.get("*", function(req, res) {
   res.sendFile(path.join(__dirname, "views", "index.html"));
+});
+
+//add new note
+app.post("/api/notes", function(req, res) {
+  const newNote = req.body;
+  
+  getNotes(path.join(__dirname, "db", "db.json"), "utf8")
+  .then((allNotes) => {
+    newNote.id = allNotes.length;
+    console.log(`newNote.id: ${newNote.id}`);
+    console.log(`allNotes line 89: ${allNotes}`);
+    allNotes.push(newNote);
+    console.log(`allNotes line 91: ${allNotes}`);
+    setNotes(path.join(__dirname, "db", "db.json"), JSON.stringify(allNotes), "utf8")
+    .then(() => {
+      //nothing?
+    })
+    .catch(function(err) {
+      console.log(err);
+    });
+  })
+  .catch(function(err) {
+    console.log(err);
+  });
+});
+
+//delete a note
+app.delete("/api/notes/:id", function(req, res){
+  const thisNote = req.body;
+  getNotes(path.join(__dirname, "db", "db.json"), "utf8")
+  .then((allNotes) => {
+    allNotes.splice(thisNote.id, 1);
+    setNotes(path.join(__dirname, "db", "db.json"), JSON.stringify(allNotes), "utf8")
+    .then(() => {
+      //nothing?
+    })
+    .catch(function(err) {
+      console.log(err);
+    });
+  })
+  .catch(function(err) {
+    console.log(err);
+  });
 });
 
 // Starts the server to begin listening
