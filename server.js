@@ -25,7 +25,6 @@ function getNotes(path, encoding) {
       if (err) {
         return reject(err);
       }
-      console.log("line 28");
       resolve(JSON.parse(data));
     });
   });
@@ -37,7 +36,6 @@ function setNotes(path, content, encoding) {
       if (err) {
         return reject(err);
       }
-      console.log(`line 40`);
     });
   });
 }
@@ -86,14 +84,11 @@ app.get("*", function(req, res) {
 //add new note
 app.post("/api/notes", function(req, res) {
   const newNote = req.body;
-  
+
   getNotes(path.join(__dirname, "db", "db.json"), "utf8")
   .then((allNotes) => {
     newNote.id = allNotes.length;
-    console.log(`newNote.id: ${newNote.id}`);
-    console.log(`allNotes line 89: ${allNotes}`);
     allNotes.push(newNote);
-    console.log(`allNotes line 91: ${allNotes}`);
     setNotes(path.join(__dirname, "db", "db.json"), JSON.stringify(allNotes), "utf8")
     .then(() => {
       //nothing?
