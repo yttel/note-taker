@@ -91,7 +91,7 @@ app.post("/api/notes", function(req, res) {
     allNotes.push(newNote);
     setNotes(path.join(__dirname, "db", "db.json"), JSON.stringify(allNotes), "utf8")
     .then(() => {
-      //nothing?
+      return res.json(allNotes);
     })
     .catch(function(err) {
       console.log(err);
@@ -110,7 +110,7 @@ app.delete("/api/notes/:id", function(req, res){
     allNotes.splice(thisNote.id, 1);
     setNotes(path.join(__dirname, "db", "db.json"), JSON.stringify(allNotes), "utf8")
     .then(() => {
-      //nothing?
+      return res.json(allNotes);
     })
     .catch(function(err) {
       console.log(err);
